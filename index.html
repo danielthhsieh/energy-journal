@@ -1,568 +1,181 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>能量日誌</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg: #1a1625;
-            --card: rgba(255,255,255,0.05);
-            --border: rgba(255,255,255,0.1);
-            --text: #e8dcc8;
-            --text-muted: rgba(232,220,200,0.5);
-            --accent: #f0a868;
-            --success: #66bb6a;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1625 0%, #0f0a18 100%);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-top: 10px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            font-family: 'Noto Serif TC', serif;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .header p {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 16px;
-            backdrop-filter: blur(10px);
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Noto Serif TC', serif;
-            color: var(--accent);
-            margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 1px;
-        }
-
-        .slider-group {
-            margin-bottom: 24px;
-        }
-
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .slider-label span:first-child {
-            font-weight: 500;
-        }
-
-        .slider-value {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .slider-value .num {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--accent);
-            min-width: 30px;
-        }
-
-        .slider-value .word {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 10px;
-            background: linear-gradient(to right, rgba(240,168,104,0.2), var(--accent));
-            outline: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid var(--accent);
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: white;
-            border: 3px solid var(--accent);
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        }
-
-        .activities {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .activity-btn {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            text-align: center;
-        }
-
-        .activity-btn:hover {
-            background: rgba(255,255,255,0.08);
-        }
-
-        .activity-btn.active {
-            background: rgba(240,168,104,0.15);
-            border-color: rgba(240,168,104,0.8);
-            color: #f0b888;
-            box-shadow: 0 4px 12px rgba(240,168,104,0.15);
-        }
-
-        .activity-icon {
-            font-size: 32px;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: rgba(255,255,255,0.04);
-            color: var(--text);
-            font-size: 16px;
-            font-family: inherit;
-            resize: none;
-            outline: none;
-            transition: all 0.2s ease;
-            min-height: 80px;
-        }
-
-        textarea:focus {
-            background: rgba(255,255,255,0.08);
-            border-color: var(--accent);
-        }
-
-        textarea::placeholder {
-            color: var(--text-muted);
-        }
-
-        .text-group {
-            margin-bottom: 20px;
-        }
-
-        .text-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .char-count {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: right;
-            margin-top: 5px;
-        }
-
-        .error {
-            background: rgba(220,90,90,0.15);
-            border: 1px solid rgba(220,90,90,0.4);
-            color: #ff9999;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            margin-bottom: 16px;
-            display: none;
-        }
-
-        .error.show {
-            display: block;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #f0b888 0%, #e8835a 100%);
-            color: #2a1c12;
-            border: none;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: 600;
-            font-family: 'Noto Serif TC', serif;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 1px;
-            box-shadow: 0 8px 24px rgba(232,131,90,0.3);
-            margin-top: 8px;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(232,131,90,0.4);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .success-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(10,5,20,0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            backdrop-filter: blur(3px);
-        }
-
-        .success-modal.show {
-            display: flex;
-        }
-
-        .success-card {
-            background: #1a1625;
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px 30px;
-            text-align: center;
-            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            max-width: 280px;
-        }
-
-        .success-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: rgba(240,168,104,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            font-size: 32px;
-        }
-
-        .success-title {
-            font-size: 22px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .success-text {
-            font-size: 14px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        @keyframes popIn {
-            from {
-                transform: scale(0.7);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>能量日誌</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1625; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    #__bundler_loading { position: fixed; bottom: 20px; right: 20px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, sans-serif; color: #666; background: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 10000; }
+    #__bundler_thumbnail { position: fixed; inset: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1a1625; z-index: 9999; }
+    #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
+    #__bundler_placeholder { color: #999; font-size: 14px; }
+  </style>
+  <noscript>
+    <style>#__bundler_loading { display: none; }</style>
+    <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
+      This page requires JavaScript to display.
+    </div>
+  </noscript>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 id="dateStr">今天</h1>
-            <p>晚間記錄 · 今晚也辛苦了</p>
-        </div>
-
-        <div class="error" id="errorMsg"></div>
-
-        <!-- 心理狀態 -->
-        <div class="card">
-            <div class="card-title">心理狀態</div>
-            
-            <div class="slider-group">
-                <div class="slider-label">
-                    <span>壓力分數</span>
-                    <div class="slider-value">
-                        <span class="word" id="pressureWord">還好</span>
-                        <span class="num" id="pressureNum">5</span>
-                    </div>
-                </div>
-                <input type="range" id="pressure" min="1" max="10" value="5">
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-label">
-                    <span>思路清晰度</span>
-                    <div class="slider-value">
-                        <span class="word" id="clarityWord">普通</span>
-                        <span class="num" id="clarityNum">5</span>
-                    </div>
-                </div>
-                <input type="range" id="clarity" min="1" max="10" value="5">
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-label">
-                    <span>睡前電量</span>
-                    <div class="slider-value">
-                        <span class="word" id="energyWord">一半</span>
-                        <span class="num" id="energyNum">5</span>
-                    </div>
-                </div>
-                <input type="range" id="energy" min="1" max="10" value="5">
-            </div>
-        </div>
-
-        <!-- 今日活動 -->
-        <div class="card">
-            <div class="card-title">今日活動</div>
-            <div class="activities">
-                <button class="activity-btn" id="walkBtn" onclick="toggleActivity('walk')">
-                    <span class="activity-icon">🚶</span>
-                    <span>散步</span>
-                </button>
-                <button class="activity-btn" id="meditateBtn" onclick="toggleActivity('meditate')">
-                    <span class="activity-icon">🧘</span>
-                    <span>冥想</span>
-                </button>
-                <button class="activity-btn" id="strengthBtn" onclick="toggleActivity('strength')">
-                    <span class="activity-icon">💪</span>
-                    <span>重訓</span>
-                </button>
-                <button class="activity-btn" id="runBtn" onclick="toggleActivity('run')">
-                    <span class="activity-icon">🏃</span>
-                    <span>跑步</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 感恩與反思 -->
-        <div class="card">
-            <div class="card-title">感恩與反思</div>
-            
-            <div class="text-group">
-                <div class="text-label">輕量感恩</div>
-                <textarea id="gratitude" placeholder="今天，謝謝什麼？" maxlength="100"></textarea>
-                <div class="char-count"><span id="gratitudeCount">0</span>/100</div>
-            </div>
-
-            <div class="text-group">
-                <div class="text-label">反思</div>
-                <textarea id="reflection" placeholder="任何想留下的觀察或想法⋯" maxlength="100"></textarea>
-                <div class="char-count"><span id="reflectionCount">0</span>/100</div>
-            </div>
-        </div>
-
-        <button class="submit-btn" id="submitBtn" onclick="submitForm()">完成今晚的紀錄 ✨</button>
+  <div id="__bundler_thumbnail">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="100" rx="20" fill="#1a1625"></rect>
+            <circle cx="68" cy="34" r="22" fill="#f0a868" opacity="0.18"></circle>
+            <circle cx="50" cy="46" r="6" fill="#f2b988"></circle>
+            <path d="M30 64 q20 -10 40 0" stroke="#f2b988" stroke-width="4" fill="none" stroke-linecap="round"></path>
+        </svg>
     </div>
+  <div id="__bundler_loading">Unpacking...</div>
 
-    <div class="success-modal" id="successModal">
-        <div class="success-card">
-            <div class="success-icon">✓</div>
-            <div class="success-title">今晚完成</div>
-            <div class="success-text">你又好好走過了<br>美好的一天</div>
-        </div>
-    </div>
+  <script>
+    
+document.addEventListener('DOMContentLoaded', async function() {
+  const loading = document.getElementById('__bundler_loading');
+  function setStatus(msg) { if (loading) loading.textContent = msg; }
 
-    <script>
-        // Google Apps Script URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHkyqqM0vOus7M0B2IHIFhaktRTenSL7c_2t12OtlYF1RuvY1jn1mugQzsHcBmltwc/exec';
+  // Error sink persists across replaceWith since it's on window, not the DOM.
+  window.addEventListener('error', function(e) {
+    var p = document.body || document.documentElement;
+    var d = document.getElementById('__bundler_err') || p.appendChild(document.createElement('div'));
+    d.id = '__bundler_err';
+    d.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;font:12px/1.4 ui-monospace,monospace;background:#2a1215;color:#ff8a80;padding:10px 14px;border-radius:8px;border:1px solid #5c2b2e;z-index:99999;white-space:pre-wrap;max-height:40vh;overflow:auto';
+    d.textContent = (d.textContent ? d.textContent + String.fromCharCode(10) : '') +
+      '[bundle] ' + (e.message || e.type) +
+      (e.filename ? ' (' + e.filename.slice(0, 60) + ':' + e.lineno + ')' : '');
+  }, true);
 
-        // 狀態
-        const state = {
-            pressure: 5,
-            clarity: 5,
-            energy: 5,
-            walk: false,
-            meditate: false,
-            strength: false,
-            run: false,
-            gratitude: '',
-            reflection: '',
-            submitting: false
-        };
+  try {
+    const manifestEl = document.querySelector('script[type="__bundler/manifest"]');
+    const templateEl = document.querySelector('script[type="__bundler/template"]');
+    if (!manifestEl || !templateEl) {
+      setStatus('Error: missing bundle data');
+      console.error('[bundler] Missing script tags — manifestEl:', !!manifestEl, 'templateEl:', !!templateEl);
+      return;
+    }
 
-        // 初始化
-        function init() {
-            updateDate();
-            setupSliders();
-            setupTextareas();
-        }
+    const manifest = JSON.parse(manifestEl.textContent);
+    let template = JSON.parse(templateEl.textContent);
 
-        function updateDate() {
-            const today = new Date();
-            const dateStr = today.toLocaleDateString('zh-TW', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            }) + ' ' + today.toLocaleDateString('zh-TW', { weekday: 'long' });
-            document.getElementById('dateStr').textContent = dateStr;
-        }
+    const uuids = Object.keys(manifest);
+    setStatus('Unpacking ' + uuids.length + ' assets...');
 
-        function setupSliders() {
-            const sliders = ['pressure', 'clarity', 'energy'];
-            sliders.forEach(name => {
-                const slider = document.getElementById(name);
-                slider.addEventListener('input', (e) => {
-                    state[name] = parseInt(e.target.value);
-                    updateSliderDisplay(name);
-                });
-            });
-        }
+    const blobUrls = {};
+    await Promise.all(uuids.map(async (uuid) => {
+      const entry = manifest[uuid];
+      try {
+        const binaryStr = atob(entry.data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
 
-        function updateSliderDisplay(name) {
-            const val = state[name];
-            document.getElementById(name + 'Num').textContent = val;
-            
-            let word = '';
-            if (name === 'pressure') {
-                word = val <= 2 ? '很放鬆' : val <= 4 ? '平穩' : val <= 6 ? '還好' : val <= 8 ? '有點緊' : '很緊繃';
-            } else if (name === 'clarity') {
-                word = val <= 2 ? '很模糊' : val <= 4 ? '有點朦' : val <= 6 ? '普通' : val <= 8 ? '清晰' : '非常清晰';
-            } else if (name === 'energy') {
-                word = val <= 2 ? '快沒電' : val <= 4 ? '偏低' : val <= 6 ? '一半' : val <= 8 ? '充足' : '滿電';
+        let finalBytes = bytes;
+        if (entry.compressed) {
+          if (typeof DecompressionStream !== 'undefined') {
+            const ds = new DecompressionStream('gzip');
+            const writer = ds.writable.getWriter();
+            const reader = ds.readable.getReader();
+            writer.write(bytes);
+            writer.close();
+            const chunks = [];
+            let totalLen = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+              totalLen += value.length;
             }
-            document.getElementById(name + 'Word').textContent = word;
+            finalBytes = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const chunk of chunks) { finalBytes.set(chunk, offset); offset += chunk.length; }
+          } else {
+            console.warn('DecompressionStream not available, asset ' + uuid + ' may not render');
+          }
         }
 
-        function setupTextareas() {
-            const textareas = ['gratitude', 'reflection'];
-            textareas.forEach(name => {
-                const ta = document.getElementById(name);
-                ta.addEventListener('input', (e) => {
-                    state[name] = e.target.value.slice(0, 100);
-                    document.getElementById(name + 'Count').textContent = state[name].length;
-                });
-            });
-        }
+        blobUrls[uuid] = URL.createObjectURL(new Blob([finalBytes], { type: entry.mime }));
+      } catch (err) {
+        console.error('Failed to decode asset ' + uuid + ':', err);
+        blobUrls[uuid] = URL.createObjectURL(new Blob([], { type: entry.mime }));
+      }
+    }));
 
-        function toggleActivity(name) {
-            state[name] = !state[name];
-            const btn = document.getElementById(name + 'Btn');
-            btn.classList.toggle('active');
-        }
+    const extResEl = document.querySelector('script[type="__bundler/ext_resources"]');
+    const extResources = extResEl ? JSON.parse(extResEl.textContent) : [];
+    const resourceMap = {};
+    for (const entry of extResources) {
+      if (blobUrls[entry.uuid]) resourceMap[entry.id] = blobUrls[entry.uuid];
+    }
 
-        function submitForm() {
-            if (state.submitting) return;
-            
-            state.submitting = true;
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').textContent = '正在記錄⋯';
-            document.getElementById('errorMsg').classList.remove('show');
+    setStatus('Rendering...');
+    for (const uuid of uuids) template = template.split(uuid).join(blobUrls[uuid]);
 
-            const today = new Date();
-            const data = {
-                date: today.toISOString().split('T')[0],
-                壓力分數: state.pressure,
-                思路清晰度: state.clarity,
-                睡前電量: state.energy,
-                散步: state.walk,
-                冥想: state.meditate,
-                重訓: state.strength,
-                跑步: state.run,
-                輕量感恩: state.gratitude,
-                反思: state.reflection
-            };
+    // Strip integrity + crossorigin — blob URLs from a file:// document inherit
+    // a null origin, so crossorigin forces a CORS fetch that SRI then rejects.
+    // The manifest bytes are ours; SRI protects against CDN compromise, not this.
+    template = template.replace(/\s+integrity="[^"]*"/gi, '').replace(/\s+crossorigin="[^"]*"/gi, '');
 
-            // 使用 no-cors 模式
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(data),
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => {
-                // no-cors 模式下無法讀取響應，假設成功
-                showSuccess();
-                state.submitting = false;
-                resetForm();
-            })
-            .catch(err => {
-                showError('網路錯誤：' + err.message);
-                state.submitting = false;
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';
-            });
-        }
+    const resourceScript = '<script>window.__resources = ' +
+      JSON.stringify(resourceMap).split('</' + 'script>').join('<\\/' + 'script>') +
+      ';</' + 'script>';
+    // Inject after <head> so the DOCTYPE stays first; prepending the script
+    // would push the parser into quirks mode. DOMParser always emits a <head>
+    // (synthesizing one if the source HTML omitted it) but may carry
+    // attributes through, so match the full opening tag. slice() rather than
+    // replace() keeps us clear of $-pattern substitution in resourceScript.
+    const headOpen = template.match(/<head[^>]*>/i);
+    if (headOpen) {
+      const i = headOpen.index + headOpen[0].length;
+      template = template.slice(0, i) + resourceScript + template.slice(i);
+    }
 
-        function showSuccess() {
-            document.getElementById('successModal').classList.add('show');
-            setTimeout(() => {
-                document.getElementById('successModal').classList.remove('show');
-            }, 3000);
-        }
+    // Parse the template and swap the root element. Scripts inserted via
+    // DOMParser/replaceWith are inert per spec — re-create each with
+    // createElement so they execute, awaiting onload for src scripts to
+    // preserve ordering (React before ReactDOM before Babel before text/babel).
+    const doc = new DOMParser().parseFromString(template, 'text/html');
+    document.documentElement.replaceWith(doc.documentElement);
+    const dead = Array.from(document.scripts);
+    for (const old of dead) {
+      const s = document.createElement('script');
+      for (const a of old.attributes) s.setAttribute(a.name, a.value);
+      s.textContent = old.textContent;
+      // text/babel scripts with a src: fetch and inline. transformScriptTags
+      // does XHR against the src, but blob:null/ from a file:// origin is
+      // silently dropped. Inlining makes it a plain inline babel script,
+      // which transformScriptTags handles unconditionally.
+      if ((s.type === 'text/babel' || s.type === 'text/jsx') && s.src) {
+        const r = await fetch(s.src);
+        s.textContent = await r.text();
+        s.removeAttribute('src');
+      }
+      const p = s.src ? new Promise(function(r) { s.onload = s.onerror = r; }) : null;
+      old.replaceWith(s);
+      if (p) await p;
+    }
+    // Babel standalone auto-transforms type=text/babel on DOMContentLoaded,
+    // which fired before we swapped the document. Trigger manually if present.
+    if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
+      window.Babel.transformScriptTags();
+    }
+  } catch (err) {
+    setStatus('Error unpacking: ' + err.message);
+    console.error('Bundle unpack error:', err);
+  }
+});
 
-        function showError(msg) {
-            const errorEl = document.getElementById('errorMsg');
-            errorEl.textContent = msg;
-            errorEl.classList.add('show');
-        }
+  </script>
 
-        function resetForm() {
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';
-        }
+  <script type="__bundler/manifest">
+{"c96f8714-ec54-449e-8ea9-ce1d92e8e514":{"mime":"font/woff2","compressed":false,"data":"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"}}
+  </script>
 
-        // 頁面加載時初始化
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+  <script type="__bundler/ext_resources">
+[]
+  </script>
+
+  <script type="__bundler/template">
+"<!DOCTYPE html>\n<html lang=\"zh-TW\"><head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>能量日誌<\u002Ftitle>\n    <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin=\"\">\n    <style>@font-face {\n  font-family: 'Noto Serif TC';\n  font-style: normal;\n  font-weight: 600;\n  font-display: swap;\n  src: url(\"c96f8714-ec54-449e-8ea9-ce1d92e8e514\") format('woff2');\n  unicode-range: U+30-39, U+4e00, U+4e09, U+4e8c, U+4e94, U+4eca, U+516d, U+52d5, U+53cd, U+56db, U+5929, U+5b8c, U+5e74, U+5fc3, U+601d, U+6069, U+611f, U+614b, U+6210, U+65e5, U+661f, U+665a, U+6708, U+671f, U+6d3b, U+72c0, U+7406, U+7684, U+7d00, U+8207, U+9304;\n}\n<\u002Fstyle>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        :root {\n            --bg: #1a1625;\n            --card: rgba(255,255,255,0.05);\n            --border: rgba(255,255,255,0.1);\n            --text: #e8dcc8;\n            --text-muted: rgba(232,220,200,0.5);\n            --accent: #f0a868;\n            --success: #66bb6a;\n        }\n\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n            background: linear-gradient(135deg, #1a1625 0%, #0f0a18 100%);\n            color: var(--text);\n            min-height: 100vh;\n            padding: 20px;\n        }\n\n        .container {\n            max-width: 480px;\n            margin: 0 auto;\n        }\n\n        .header {\n            text-align: center;\n            margin-bottom: 30px;\n            padding-top: 10px;\n        }\n\n        .header h1 {\n            font-size: 28px;\n            font-weight: 600;\n            font-family: 'Noto Serif TC', serif;\n            margin-bottom: 8px;\n            letter-spacing: 0.5px;\n        }\n\n        .header p {\n            font-size: 14px;\n            color: var(--text-muted);\n        }\n\n        .card {\n            background: var(--card);\n            border: 1px solid var(--border);\n            border-radius: 20px;\n            padding: 24px;\n            margin-bottom: 16px;\n            backdrop-filter: blur(10px);\n        }\n\n        .card-title {\n            font-size: 16px;\n            font-weight: 600;\n            font-family: 'Noto Serif TC', serif;\n            color: var(--accent);\n            margin-bottom: 20px;\n            text-align: center;\n            letter-spacing: 1px;\n        }\n\n        .slider-group {\n            margin-bottom: 24px;\n        }\n\n        .slider-label {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            margin-bottom: 10px;\n            font-size: 14px;\n        }\n\n        .slider-label span:first-child {\n            font-weight: 500;\n        }\n\n        .slider-value {\n            display: flex;\n            align-items: center;\n            gap: 8px;\n        }\n\n        .slider-value .num {\n            font-size: 20px;\n            font-weight: 700;\n            color: var(--accent);\n            min-width: 30px;\n        }\n\n        .slider-value .word {\n            font-size: 13px;\n            color: var(--text-muted);\n        }\n\n        input[type=\"range\"] {\n            width: 100%;\n            height: 6px;\n            border-radius: 10px;\n            background: linear-gradient(to right, rgba(240,168,104,0.2), var(--accent));\n            outline: none;\n            -webkit-appearance: none;\n            cursor: pointer;\n        }\n\n        input[type=\"range\"]::-webkit-slider-thumb {\n            -webkit-appearance: none;\n            width: 24px;\n            height: 24px;\n            border-radius: 50%;\n            background: white;\n            border: 3px solid var(--accent);\n            cursor: pointer;\n            box-shadow: 0 3px 10px rgba(0,0,0,0.3);\n        }\n\n        input[type=\"range\"]::-moz-range-thumb {\n            width: 24px;\n            height: 24px;\n            border-radius: 50%;\n            background: white;\n            border: 3px solid var(--accent);\n            cursor: pointer;\n            box-shadow: 0 3px 10px rgba(0,0,0,0.3);\n        }\n\n        .activities {\n            display: grid;\n            grid-template-columns: 1fr 1fr;\n            gap: 12px;\n        }\n\n        .activity-btn {\n            background: rgba(255,255,255,0.04);\n            border: 1px solid var(--border);\n            border-radius: 16px;\n            padding: 16px 12px;\n            cursor: pointer;\n            transition: all 0.25s ease;\n            color: var(--text-muted);\n            font-size: 14px;\n            font-weight: 600;\n            display: flex;\n            flex-direction: column;\n            align-items: center;\n            gap: 10px;\n            text-align: center;\n        }\n\n        .activity-btn:hover {\n            background: rgba(255,255,255,0.08);\n        }\n\n        .activity-btn.active {\n            background: rgba(240,168,104,0.15);\n            border-color: rgba(240,168,104,0.8);\n            color: #f0b888;\n            box-shadow: 0 4px 12px rgba(240,168,104,0.15);\n        }\n\n        .activity-icon {\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            height: 40px;\n        }\n\n        textarea {\n            width: 100%;\n            padding: 14px;\n            border: 1px solid var(--border);\n            border-radius: 14px;\n            background: rgba(255,255,255,0.04);\n            color: var(--text);\n            font-size: 16px;\n            font-family: inherit;\n            resize: none;\n            outline: none;\n            transition: all 0.2s ease;\n            min-height: 80px;\n        }\n\n        textarea:focus {\n            background: rgba(255,255,255,0.08);\n            border-color: var(--accent);\n        }\n\n        textarea::placeholder {\n            color: var(--text-muted);\n        }\n\n        .text-group {\n            margin-bottom: 20px;\n        }\n\n        .text-label {\n            font-size: 13px;\n            color: var(--text-muted);\n            margin-bottom: 8px;\n            font-weight: 500;\n        }\n\n        .char-count {\n            font-size: 12px;\n            color: var(--text-muted);\n            text-align: right;\n            margin-top: 5px;\n        }\n\n        .error {\n            background: rgba(220,90,90,0.15);\n            border: 1px solid rgba(220,90,90,0.4);\n            color: #ff9999;\n            padding: 12px 14px;\n            border-radius: 12px;\n            font-size: 13px;\n            margin-bottom: 16px;\n            display: none;\n        }\n\n        .error.show {\n            display: block;\n        }\n\n        .submit-btn {\n            width: 100%;\n            padding: 16px;\n            background: linear-gradient(135deg, #f0b888 0%, #e8835a 100%);\n            color: #2a1c12;\n            border: none;\n            border-radius: 14px;\n            font-size: 18px;\n            font-weight: 600;\n            font-family: 'Noto Serif TC', serif;\n            cursor: pointer;\n            transition: all 0.2s ease;\n            letter-spacing: 1px;\n            box-shadow: 0 8px 24px rgba(232,131,90,0.3);\n            margin-top: 8px;\n        }\n\n        .submit-btn:hover:not(:disabled) {\n            transform: translateY(-2px);\n            box-shadow: 0 12px 32px rgba(232,131,90,0.4);\n        }\n\n        .submit-btn:disabled {\n            opacity: 0.7;\n            cursor: not-allowed;\n        }\n\n        .success-modal {\n            position: fixed;\n            inset: 0;\n            background: rgba(10,5,20,0.7);\n            display: none;\n            align-items: center;\n            justify-content: center;\n            z-index: 100;\n            backdrop-filter: blur(3px);\n        }\n\n        .success-modal.show {\n            display: flex;\n        }\n\n        .success-card {\n            background: #1a1625;\n            border: 1px solid var(--border);\n            border-radius: 24px;\n            padding: 40px 30px;\n            text-align: center;\n            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);\n            max-width: 280px;\n        }\n\n        .success-icon {\n            width: 56px;\n            height: 56px;\n            border-radius: 50%;\n            background: rgba(240,168,104,0.15);\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            margin: 0 auto 16px;\n            font-size: 32px;\n        }\n\n        .success-title {\n            font-size: 22px;\n            font-weight: 600;\n            margin-bottom: 8px;\n            color: var(--text);\n        }\n\n        .success-text {\n            font-size: 14px;\n            color: var(--text-muted);\n            line-height: 1.6;\n        }\n\n        @keyframes popIn {\n            from {\n                transform: scale(0.7);\n                opacity: 0;\n            }\n            to {\n                transform: scale(1);\n                opacity: 1;\n            }\n        }\n    <\u002Fstyle>\n<\u002Fhead>\n<body>\n    \n    <div class=\"container\">\n        <div class=\"header\">\n            <h1 id=\"dateStr\">今天<\u002Fh1>\n            <p>晚間記錄 · 今晚也辛苦了<\u002Fp>\n        <\u002Fdiv>\n\n        <div class=\"error\" id=\"errorMsg\"><\u002Fdiv>\n\n        <!-- 心理狀態 -->\n        <div class=\"card\">\n            <div class=\"card-title\">心理狀態<\u002Fdiv>\n            \n            <div class=\"slider-group\">\n                <div class=\"slider-label\">\n                    <span>壓力分數<\u002Fspan>\n                    <div class=\"slider-value\">\n                        <span class=\"word\" id=\"pressureWord\">還好<\u002Fspan>\n                        <span class=\"num\" id=\"pressureNum\">5<\u002Fspan>\n                    <\u002Fdiv>\n                <\u002Fdiv>\n                <input type=\"range\" id=\"pressure\" min=\"1\" max=\"10\" value=\"5\">\n            <\u002Fdiv>\n\n            <div class=\"slider-group\">\n                <div class=\"slider-label\">\n                    <span>思路清晰度<\u002Fspan>\n                    <div class=\"slider-value\">\n                        <span class=\"word\" id=\"clarityWord\">普通<\u002Fspan>\n                        <span class=\"num\" id=\"clarityNum\">5<\u002Fspan>\n                    <\u002Fdiv>\n                <\u002Fdiv>\n                <input type=\"range\" id=\"clarity\" min=\"1\" max=\"10\" value=\"5\">\n            <\u002Fdiv>\n\n            <div class=\"slider-group\">\n                <div class=\"slider-label\">\n                    <span>睡前電量<\u002Fspan>\n                    <div class=\"slider-value\">\n                        <span class=\"word\" id=\"energyWord\">一半<\u002Fspan>\n                        <span class=\"num\" id=\"energyNum\">5<\u002Fspan>\n                    <\u002Fdiv>\n                <\u002Fdiv>\n                <input type=\"range\" id=\"energy\" min=\"1\" max=\"10\" value=\"5\">\n            <\u002Fdiv>\n        <\u002Fdiv>\n\n        <!-- 今日活動 -->\n        <div class=\"card\">\n            <div class=\"card-title\">今日活動<\u002Fdiv>\n            <div class=\"activities\">\n                <button class=\"activity-btn\" id=\"walkBtn\" onclick=\"toggleActivity('walk')\">\n                    <span class=\"activity-icon\">\n                        <svg width=\"38\" height=\"38\" viewBox=\"0 0 40 40\" fill=\"currentColor\">\n                            <ellipse cx=\"15\" cy=\"14\" rx=\"4.2\" ry=\"6.2\" transform=\"rotate(-14 15 14)\"><\u002Fellipse>\n                            <ellipse cx=\"25\" cy=\"26\" rx=\"4.2\" ry=\"6.2\" opacity=\"0.5\" transform=\"rotate(-14 25 26)\"><\u002Fellipse>\n                        <\u002Fsvg>\n                    <\u002Fspan>\n                    <span>散步<\u002Fspan>\n                <\u002Fbutton>\n                <button class=\"activity-btn\" id=\"meditateBtn\" onclick=\"toggleActivity('meditate')\">\n                    <span class=\"activity-icon\">\n                        <svg width=\"38\" height=\"38\" viewBox=\"0 0 40 40\" fill=\"currentColor\">\n                            <circle cx=\"20\" cy=\"20\" r=\"3.6\"><\u002Fcircle>\n                            <circle cx=\"20\" cy=\"20\" r=\"8.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" opacity=\"0.5\"><\u002Fcircle>\n                            <circle cx=\"20\" cy=\"20\" r=\"13.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" opacity=\"0.25\"><\u002Fcircle>\n                            <circle cx=\"20\" cy=\"4.2\" r=\"1.6\"><\u002Fcircle>\n                            <circle cx=\"20\" cy=\"35.8\" r=\"1.6\"><\u002Fcircle>\n                            <circle cx=\"4.2\" cy=\"20\" r=\"1.6\"><\u002Fcircle>\n                            <circle cx=\"35.8\" cy=\"20\" r=\"1.6\"><\u002Fcircle>\n                            <circle cx=\"8.8\" cy=\"8.8\" r=\"1.3\" opacity=\"0.7\"><\u002Fcircle>\n                            <circle cx=\"31.2\" cy=\"8.8\" r=\"1.3\" opacity=\"0.7\"><\u002Fcircle>\n                            <circle cx=\"8.8\" cy=\"31.2\" r=\"1.3\" opacity=\"0.7\"><\u002Fcircle>\n                            <circle cx=\"31.2\" cy=\"31.2\" r=\"1.3\" opacity=\"0.7\"><\u002Fcircle>\n                        <\u002Fsvg>\n                    <\u002Fspan>\n                    <span>冥想<\u002Fspan>\n                <\u002Fbutton>\n                <button class=\"activity-btn\" id=\"strengthBtn\" onclick=\"toggleActivity('strength')\">\n                    <span class=\"activity-icon\">\n                        <svg width=\"38\" height=\"38\" viewBox=\"0 0 40 40\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n                            <path d=\"M6 8 Q20 4.5 34 8\"><\u002Fpath>\n                            <rect x=\"2.6\" y=\"4.4\" width=\"3.2\" height=\"7.2\" rx=\"1.4\" fill=\"currentColor\" stroke=\"none\"><\u002Frect>\n                            <rect x=\"34.2\" y=\"4.4\" width=\"3.2\" height=\"7.2\" rx=\"1.4\" fill=\"currentColor\" stroke=\"none\"><\u002Frect>\n                            <circle cx=\"20\" cy=\"14\" r=\"3.5\" fill=\"currentColor\" stroke=\"none\"><\u002Fcircle>\n                            <path d=\"M8 8 L16 19.5\"><\u002Fpath>\n                            <path d=\"M32 8 L24 19.5\"><\u002Fpath>\n                            <path d=\"M16 19.5 H24\"><\u002Fpath>\n                            <path d=\"M20 19.5 V28\"><\u002Fpath>\n                            <path d=\"M20 28 L14.5 36\"><\u002Fpath>\n                            <path d=\"M20 28 L25.5 36\"><\u002Fpath>\n                        <\u002Fsvg>\n                    <\u002Fspan>\n                    <span>重訓<\u002Fspan>\n                <\u002Fbutton>\n                <button class=\"activity-btn\" id=\"runBtn\" onclick=\"toggleActivity('run')\">\n                    <span class=\"activity-icon\">\n                        <svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"currentColor\">\n                            <path d=\"M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z\"><\u002Fpath>\n                        <\u002Fsvg>\n                    <\u002Fspan>\n                    <span>跑步<\u002Fspan>\n                <\u002Fbutton>\n            <\u002Fdiv>\n        <\u002Fdiv>\n\n        <!-- 感恩與反思 -->\n        <div class=\"card\">\n            <div class=\"card-title\">感恩與反思<\u002Fdiv>\n            \n            <div class=\"text-group\">\n                <div class=\"text-label\">輕量感恩<\u002Fdiv>\n                <textarea id=\"gratitude\" placeholder=\"今天，謝謝什麼？\" maxlength=\"100\"><\u002Ftextarea>\n                <div class=\"char-count\"><span id=\"gratitudeCount\">0<\u002Fspan>/100<\u002Fdiv>\n            <\u002Fdiv>\n\n            <div class=\"text-group\">\n                <div class=\"text-label\">反思<\u002Fdiv>\n                <textarea id=\"reflection\" placeholder=\"任何想留下的觀察或想法⋯\" maxlength=\"100\"><\u002Ftextarea>\n                <div class=\"char-count\"><span id=\"reflectionCount\">0<\u002Fspan>/100<\u002Fdiv>\n            <\u002Fdiv>\n        <\u002Fdiv>\n\n        <button class=\"submit-btn\" id=\"submitBtn\" onclick=\"submitForm()\">完成今晚的紀錄 ✨<\u002Fbutton>\n    <\u002Fdiv>\n\n    <div class=\"success-modal\" id=\"successModal\">\n        <div class=\"success-card\">\n            <div class=\"success-icon\">✓<\u002Fdiv>\n            <div class=\"success-title\">今晚完成<\u002Fdiv>\n            <div class=\"success-text\">你又好好走過了<br>美好的一天<\u002Fdiv>\n        <\u002Fdiv>\n    <\u002Fdiv>\n\n    <script>\n        // Google Apps Script URL\n        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHkyqqM0vOus7M0B2IHIFhaktRTenSL7c_2t12OtlYF1RuvY1jn1mugQzsHcBmltwc/exec';\n\n        // 狀態\n        const state = {\n            pressure: 5,\n            clarity: 5,\n            energy: 5,\n            walk: false,\n            meditate: false,\n            strength: false,\n            run: false,\n            gratitude: '',\n            reflection: '',\n            submitting: false\n        };\n\n        // 初始化\n        function init() {\n            updateDate();\n            setupSliders();\n            setupTextareas();\n        }\n\n        function updateDate() {\n            const today = new Date();\n            const dateStr = today.toLocaleDateString('zh-TW', {\n                year: 'numeric',\n                month: 'long',\n                day: 'numeric'\n            }) + ' ' + today.toLocaleDateString('zh-TW', { weekday: 'long' });\n            document.getElementById('dateStr').textContent = dateStr;\n        }\n\n        function setupSliders() {\n            const sliders = ['pressure', 'clarity', 'energy'];\n            sliders.forEach(name => {\n                const slider = document.getElementById(name);\n                slider.addEventListener('input', (e) => {\n                    state[name] = parseInt(e.target.value);\n                    updateSliderDisplay(name);\n                });\n            });\n        }\n\n        function updateSliderDisplay(name) {\n            const val = state[name];\n            document.getElementById(name + 'Num').textContent = val;\n            \n            let word = '';\n            if (name === 'pressure') {\n                word = val <= 2 ? '很放鬆' : val <= 4 ? '平穩' : val <= 6 ? '還好' : val <= 8 ? '有點緊' : '很緊繃';\n            } else if (name === 'clarity') {\n                word = val <= 2 ? '很模糊' : val <= 4 ? '有點朦' : val <= 6 ? '普通' : val <= 8 ? '清晰' : '非常清晰';\n            } else if (name === 'energy') {\n                word = val <= 2 ? '快沒電' : val <= 4 ? '偏低' : val <= 6 ? '一半' : val <= 8 ? '充足' : '滿電';\n            }\n            document.getElementById(name + 'Word').textContent = word;\n        }\n\n        function setupTextareas() {\n            const textareas = ['gratitude', 'reflection'];\n            textareas.forEach(name => {\n                const ta = document.getElementById(name);\n                ta.addEventListener('input', (e) => {\n                    state[name] = e.target.value.slice(0, 100);\n                    document.getElementById(name + 'Count').textContent = state[name].length;\n                });\n            });\n        }\n\n        function toggleActivity(name) {\n            state[name] = !state[name];\n            const btn = document.getElementById(name + 'Btn');\n            btn.classList.toggle('active');\n        }\n\n        function submitForm() {\n            if (state.submitting) return;\n            \n            state.submitting = true;\n            document.getElementById('submitBtn').disabled = true;\n            document.getElementById('submitBtn').textContent = '正在記錄⋯';\n            document.getElementById('errorMsg').classList.remove('show');\n\n            const today = new Date();\n            const data = {\n                date: today.toISOString().split('T')[0],\n                壓力分數: state.pressure,\n                思路清晰度: state.clarity,\n                睡前電量: state.energy,\n                散步: state.walk,\n                冥想: state.meditate,\n                重訓: state.strength,\n                跑步: state.run,\n                輕量感恩: state.gratitude,\n                反思: state.reflection\n            };\n\n            // 使用 no-cors 模式\n            fetch(SCRIPT_URL, {\n                method: 'POST',\n                mode: 'no-cors',\n                body: JSON.stringify(data),\n                headers: { 'Content-Type': 'application/json' }\n            })\n            .then(response => {\n                // no-cors 模式下無法讀取響應，假設成功\n                showSuccess();\n                state.submitting = false;\n                resetForm();\n            })\n            .catch(err => {\n                showError('網路錯誤：' + err.message);\n                state.submitting = false;\n                document.getElementById('submitBtn').disabled = false;\n                document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';\n            });\n        }\n\n        function showSuccess() {\n            document.getElementById('successModal').classList.add('show');\n            setTimeout(() => {\n                document.getElementById('successModal').classList.remove('show');\n            }, 3000);\n        }\n\n        function showError(msg) {\n            const errorEl = document.getElementById('errorMsg');\n            errorEl.textContent = msg;\n            errorEl.classList.add('show');\n        }\n\n        function resetForm() {\n            document.getElementById('submitBtn').disabled = false;\n            document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';\n        }\n\n        // 頁面加載時初始化\n        document.addEventListener('DOMContentLoaded', init);\n    <\u002Fscript>\n\n\n<\u002Fbody><\u002Fhtml>"
+  </script>
 </body>
 </html>
