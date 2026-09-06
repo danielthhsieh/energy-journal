@@ -34,6 +34,11 @@
 - 非今天時標題顯示該日期與「回到今天」，送出成功後自動回到今天
 - 後端不需改動
 
+### ✅ 寫入結果驗證（F4）
+- 送出改為可讀回應：後端回 `success:true` 且日期一致才算成功，否則顯示原因、保留表單、按一次重試即可
+- 載入失敗時封鎖送出並提供重試，避免用預設值覆蓋既有紀錄
+- 後端所有回應帶 `version`，`?ping=1` 可確認部署已生效
+
 ### 🔘 跳過標記（F0）
 - 「今天不記分數，只留個記號」：分數三欄留空、活動照填，`跳過` 欄寫入 TRUE
 - 讓「刻意不記」與「忘了記」在資料上分得開；設計判準見 [docs/prd-directions-2026-09.md](docs/prd-directions-2026-09.md)
@@ -93,6 +98,7 @@
    - 執行身分：**你的帳號**
    - 誰可以存取：**任何人** ✅
 6. 複製部署 URL（長這樣）：
+   （每次更新後端程式碼都要「管理部署 → 編輯 → 新版本」，只存檔不會更新 URL 背後的版本；用 `?ping=1` 確認 `version` 已變）
    ```
    https://script.google.com/macros/s/[ID]/exec
    ```
@@ -145,7 +151,8 @@ git push origin main
 │   ├── prd-directions-2026-09.md    # PRD 方向：問題陳述、設計判準、功能候選、階段規劃
 │   ├── spec-f0-skip-marker.md       # F0 規格：跳過標記
 │   ├── spec-f1-weekly-review.md     # F1 規格：週回顧
-│   └── spec-f2-backfill.md          # F2 規格：補登
+│   ├── spec-f2-backfill.md          # F2 規格：補登
+│   └── spec-f4-write-verification.md # F4 規格：寫入結果驗證
 └── README.md
 ```
 

@@ -3,6 +3,10 @@
 const SHEET_ID = "1D3Hc6B4_lh3Xe2pU8oimymfDyZHLC86iVBAa95eEDNg";
 const SHEET_NAME = "能量日誌";
 
+// F4：後端版本。所有 JSON 回應都帶 version，前端與 curl ?ping=1 可據此確認部署已生效。
+// 每次改後端且需要部署時 +1。
+const BACKEND_VERSION = 4;
+
 // F0：跳過標記欄位（K 欄）。一列資料共 11 欄：A 日期 … J 反思，K 跳過
 const COL_SKIP = 11;
 const ROW_WIDTH = 11;
@@ -92,6 +96,7 @@ function doGetRange(fromStr, toStr) {
 }
 
 function jsonOut(obj) {
+  obj.version = BACKEND_VERSION;   // F4
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -100,6 +105,11 @@ function jsonOut(obj) {
 // ===== GET 請求：讀取當天資料（預填充用）=====
 function doGet(e) {
   try {
+    // F4：部署健康檢查
+    if (e.parameter.ping) {
+      return jsonOut({ success: true, time: new Date().toISOString() });
+    }
+
     // F1：有 from 與 to 走區間讀取；否則沿用單日邏輯
     if (e.parameter.from && e.parameter.to) {
       return doGetRange(String(e.parameter.from), String(e.parameter.to));
@@ -159,20 +169,16 @@ function doGet(e) {
               
               Logger.log("找到 " + dateParam + " 的有效記錄於第 " + recordRow + " 行");
               
-              return ContentService
-                .createTextOutput(JSON.stringify(response))
-                .setMimeType(ContentService.MimeType.JSON);
+              return jsonOut(response);
             } else {
               // 日期存在但全部欄位都是空值
               Logger.log("找到 " + dateParam + " 的日期但沒有實際資料");
-              return ContentService
-                .createTextOutput(JSON.stringify({ 
+              return jsonOut({ 
                   success: true, 
                   found: false, 
                   date: dateParam,
                   message: "日期存在但沒有填寫資料" 
-                }))
-                .setMimeType(ContentService.MimeType.JSON);
+                });
             }
           }
         }
@@ -181,23 +187,19 @@ function doGet(e) {
     
     // 沒找到該日期的記錄
     Logger.log("未找到 " + dateParam + " 的記錄");
-    return ContentService
-      .createTextOutput(JSON.stringify({ 
+    return jsonOut({ 
         success: true, 
         found: false, 
         date: dateParam,
         message: "今天還沒有記錄" 
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+      });
       
   } catch (error) {
     Logger.log("❌ doGet 錯誤: " + error.toString());
-    return ContentService
-      .createTextOutput(JSON.stringify({ 
+    return jsonOut({ 
         success: false, 
         error: error.toString() 
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+      });
   }
 }
 
@@ -212,9 +214,7 @@ function doPost(e) {
 
     // 驗證必要欄位（跳過模式不需要分數）
     if (!data.date || (!skip && (data.壓力分數 === undefined || data.思路清晰度 === undefined || data.睡前電量 === undefined))) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ success: false, error: "缺少必要欄位" }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return jsonOut({ success: false, error: "缺少必要欄位" });
     }
     
     // 打開 Google Sheet
@@ -279,16 +279,14 @@ function doPost(e) {
     }
     
     // 返回成功回應
-    return ContentService
-      .createTextOutput(JSON.stringify({ 
+    return jsonOut({ 
         success: true, 
         message: skip ? "✓ 已留記號" : (action === "updated" ? "✓ 已更新今日記錄" : "✓ 已新增記錄"),
         date: submitDateString,
         row: targetRow,
         action: action,
         skip: skip
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+      });
       
   } catch (error) {
     // 記錄錯誤
@@ -296,12 +294,10 @@ function doPost(e) {
     Logger.log("Stack: " + error.stack);
     
     // 返回錯誤回應
-    return ContentService
-      .createTextOutput(JSON.stringify({ 
+    return jsonOut({ 
         success: false, 
         error: error.toString() 
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+      });
   }
 }
 

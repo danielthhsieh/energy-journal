@@ -2,7 +2,7 @@
 
 > 上游：[prd-directions-2026-09.md](prd-directions-2026-09.md) 第 4 節 F4
 > 前置：F0～F2 已上線
-> 狀態：規格 v1，待確認決策後開發
+> 狀態：已開發（2026-09-06）。前端可先上；後端 version／ping 需 Daniel 部署後以 `?ping=1` 驗證。
 
 ---
 
@@ -134,11 +134,16 @@ curl -sL "https://script.google.com/macros/s/AKfycbzHkyqqM0vOus7M0B2IHIFhaktRTen
 - 不做送出時間戳（Sheet 無欄位，見 F2 規格第 8 節）。
 - 不改 `doOptions`。
 
-## 11. 待確認決策
+## 11. 決策紀錄
 
-- D3 逾時 20 秒。
-- D4 載入失敗時**封鎖送出**（嚴格）。替代方案是只警告不封鎖，但那樣 S2 的覆蓋風險還在。
-- D5 後端加 `version` 與 `?ping=1`。需要你再部署一次，但不阻擋前端先上。
+| 日期 | 決策 | 決策者 |
+|---|---|---|
+| 2026-09-06 | D3 逾時 20 秒 | Daniel 確認 |
+| 2026-09-06 | D4 載入失敗時封鎖送出（嚴格版） | Daniel 確認 |
+| 2026-09-06 | D5 後端加 `version` 與 `?ping=1` | Daniel 確認 |
+| 2026-09-06 | `resetForm()` 依 `state.loadFailed` 決定按鈕 disabled，任何路徑呼叫 resetForm 都不會意外解鎖 | 開發時決定 |
+| 2026-09-06 | `loadRecord` 對 `success:false` 也走失敗分支（原本只有 throw 才算失敗） | 開發時決定 |
+| 2026-09-06 | 後端所有 JSON 輸出統一走 `jsonOut()`；開發時正規表達式誤把 `jsonOut` 自身也換掉造成無限遞迴，node stub 測試抓到後修正 | 開發紀錄 |
 
 ## 12. 開放問題
 
