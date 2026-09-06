@@ -37,9 +37,74 @@ function doOptions(e) {
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
+// ===== F1：區間讀取 =====
+// GET ?from=YYYY-MM-DD&to=YYYY-MM-DD
+// 只回傳「有資料」的列：B/C/D 任一為數字，或 K 為 TRUE。預填的空列（活動全 FALSE、無文字）不回傳。
+const RANGE_MAX_DAYS = 60;
+
+function doGetRange(fromStr, toStr) {
+  const from = new Date(fromStr + "T00:00:00+08:00");
+  const to = new Date(toStr + "T00:00:00+08:00");
+  if (isNaN(from.getTime()) || isNaN(to.getTime()) || from > to) {
+    return jsonOut({ success: false, error: "日期格式錯誤或 from 晚於 to" });
+  }
+  const spanDays = Math.round((to - from) / 86400000) + 1;
+  if (spanDays > RANGE_MAX_DAYS) {
+    return jsonOut({ success: false, error: "區間上限 " + RANGE_MAX_DAYS + " 天" });
+  }
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const lastRow = sheet.getLastRow();
+  const rows = [];
+
+  if (lastRow > 1) {
+    const values = sheet.getRange(2, 1, lastRow - 1, ROW_WIDTH).getValues();
+    for (let i = 0; i < values.length; i++) {
+      const r = values[i];
+      const cellDate = r[0];
+      if (!(cellDate instanceof Date)) continue;
+      const ds = Utilities.formatDate(cellDate, "Asia/Taipei", "yyyy-MM-dd");
+      if (ds < fromStr || ds > toStr) continue;
+
+      const isSkip = r[COL_SKIP - 1] === true;
+      const hasScore = [r[1], r[2], r[3]].some(v => typeof v === "number");
+      if (!isSkip && !hasScore) continue;   // 預填空列
+
+      rows.push({
+        date: ds,
+        壓力分數: typeof r[1] === "number" ? r[1] : null,
+        思路清晰度: typeof r[2] === "number" ? r[2] : null,
+        睡前電量: typeof r[3] === "number" ? r[3] : null,
+        散步: r[4] === true,
+        冥想: r[5] === true,
+        重訓: r[6] === true,
+        跑步: r[7] === true,
+        輕量感恩: r[8] || "",
+        反思: r[9] || "",
+        跳過: isSkip
+      });
+    }
+  }
+
+  Logger.log("F1 區間 " + fromStr + "～" + toStr + "：" + rows.length + " 筆有資料");
+  return jsonOut({ success: true, from: fromStr, to: toStr, rows: rows });
+}
+
+function jsonOut(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 // ===== GET 請求：讀取當天資料（預填充用）=====
 function doGet(e) {
   try {
+    // F1：有 from 與 to 走區間讀取；否則沿用單日邏輯
+    if (e.parameter.from && e.parameter.to) {
+      return doGetRange(String(e.parameter.from), String(e.parameter.to));
+    }
+
     // 獲取查詢日期（如果沒提供，預設為今天）
     const dateParam = e.parameter.date || Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd");
     
@@ -261,6 +326,14 @@ function testSkipToday() {
   const res = doPost({ postData: { contents: JSON.stringify(payload) } });
   Logger.log("testSkipToday: " + res.getContent());
   Logger.log("readback: " + doGet({ parameter: { date: today } }).getContent());
+}
+
+// F1：測試區間讀取（最近 28 天）
+function testReadRange() {
+  const to = Utilities.formatDate(new Date(), "Asia/Taipei", "yyyy-MM-dd");
+  const from = Utilities.formatDate(new Date(Date.now() - 27 * 86400000), "Asia/Taipei", "yyyy-MM-dd");
+  const res = doGet({ parameter: { from: from, to: to } });
+  Logger.log("testReadRange " + from + "～" + to + ": " + res.getContent().slice(0, 600));
 }
 
 function testReadToday() {

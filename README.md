@@ -23,6 +23,12 @@
 - **感恩日誌**：記錄今天值得感謝的事（100 字以內）
 - **反思**：記錄觀察和想法（100 字以內）
 
+### 📈 週回顧（F1）
+- 表單上方顯示最近 4 週三個分數的週平均趨勢，Y 軸固定 1 到 10，單色、無互動
+- 該週至少 2 天有分數才畫點；最近 4 週不足 2 週有點時整區隱藏
+- 下方回聲一則 7 到 28 天前的反思或感恩，同一天內不換
+- 後端提供 `?from=YYYY-MM-DD&to=YYYY-MM-DD` 區間端點，只回傳有分數或跳過的列（上限 60 天）
+
 ### 🔘 跳過標記（F0）
 - 「今天不記分數，只留個記號」：分數三欄留空、活動照填，`跳過` 欄寫入 TRUE
 - 讓「刻意不記」與「忘了記」在資料上分得開；設計判準見 [docs/prd-directions-2026-09.md](docs/prd-directions-2026-09.md)
@@ -132,7 +138,8 @@ git push origin main
 │   └── energy-journal.gs            # Google Apps Script 後端代碼（部署時複製到 Apps Script 編輯器）
 ├── docs/
 │   ├── prd-directions-2026-09.md    # PRD 方向：問題陳述、設計判準、功能候選、階段規劃
-│   └── spec-f0-skip-marker.md       # F0 規格：跳過標記
+│   ├── spec-f0-skip-marker.md       # F0 規格：跳過標記
+│   └── spec-f1-weekly-review.md     # F1 規格：週回顧
 └── README.md
 ```
 

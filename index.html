@@ -289,6 +289,92 @@
             cursor: not-allowed;
         }
 
+        /* F1：週回顧（只呈現趨勢；單色、固定 Y 軸、無互動） */
+        .weekly-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .weekly-label {
+            width: 36px;
+            flex: none;
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .weekly-row svg {
+            flex: 1 1 0;
+            min-width: 0;      /* 蓋掉 SVG 300px 內建寬度，讓 flex 能壓縮 */
+            width: 0;
+            height: 44px;
+            display: block;
+            overflow: visible;
+        }
+        .weekly-num {
+            width: 36px;
+            flex: none;
+            text-align: right;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+        .weekly-axis {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .weekly-axis .spacer { width: 36px; flex: none; }
+        .weekly-weeks {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .weekly-week {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .weekly-dots {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            margin-top: 6px;
+            min-height: 6px;
+        }
+        .weekly-dots i {
+            display: block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            box-sizing: border-box;
+            background: var(--text-muted);
+        }
+        .weekly-dots i.hollow {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+        }
+        .weekly-echo {
+            border-top: 1px solid var(--border);
+            margin-top: 18px;
+            padding-top: 14px;
+        }
+        .weekly-echo-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .weekly-echo-text {
+            margin-top: 6px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text);
+            font-family: 'Noto Serif TC', serif;
+        }
+
         /* F0：跳過標記（次要選項，低對比、無強調） */
         .skip-btn {
             display: block;
@@ -389,6 +475,21 @@
         </div>
 
         <div class="error" id="errorMsg"></div>
+
+        <!-- F1：週回顧。資料不足或載入失敗時整個隱藏，不顯示任何文字 -->
+        <div class="card" id="weeklyReview" hidden>
+            <div class="card-title">這幾週</div>
+            <div id="weeklyRows"></div>
+            <div class="weekly-axis">
+                <div class="spacer"></div>
+                <div class="weekly-weeks" id="weeklyWeeks"></div>
+                <div class="spacer"></div>
+            </div>
+            <div class="weekly-echo" id="weeklyEcho" hidden>
+                <div class="weekly-echo-meta" id="weeklyEchoMeta"></div>
+                <div class="weekly-echo-text" id="weeklyEchoText"></div>
+            </div>
+        </div>
 
         <!-- 心理狀態 -->
         <div class="card" id="scoreCard">
@@ -541,6 +642,7 @@
             setupSliders();
             setupTextareas();
             loadTodayRecord(); // 預填充功能
+            loadWeeklyReview(); // F1：與預填充並行，互不等待
         }
 
         function updateDate() {
@@ -699,6 +801,160 @@
                 loadIndicator.classList.add('done');
             }
         }
+
+        // ===== F1：週回顧 =====
+        const WEEKLY_WEEKS = 4;          // 最近 4 週，含本週
+        const WEEKLY_MIN_SCORED = 2;     // 該週至少 2 天有分數才畫點
+        const WEEKLY_MIN_WEEKS = 2;      // 至少 2 週有點才顯示區塊
+        const ECHO_MIN_AGO = 7;          // 回聲取材：7～28 天前
+        const ECHO_MAX_AGO = 28;
+        const WEEKLY_METRICS = [
+            { key: '壓力分數', label: '壓力' },
+            { key: '思路清晰度', label: '清晰' },
+            { key: '睡前電量', label: '電量' }
+        ];
+        let weeklyData = null;   // 供 resize 重繪
+
+        // 日期字串 → 天數索引（以 UTC 計，避免時區位移）
+        function dayIndex(ymd) {
+            const [y, m, d] = ymd.split('-').map(Number);
+            return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+        }
+        function ymdFromIndex(idx) {
+            return new Date(idx * 86400000).toISOString().slice(0, 10);
+        }
+        // 該天所屬週的週一索引（週一為一週起始）
+        function mondayIndex(idx) {
+            const dow = (new Date(idx * 86400000).getUTCDay() + 6) % 7; // 週一=0
+            return idx - dow;
+        }
+        function shortMD(ymd) {
+            const [, m, d] = ymd.split('-').map(Number);
+            return `${m}/${d}`;
+        }
+
+        async function loadWeeklyReview() {
+            const card = document.getElementById('weeklyReview');
+            try {
+                const todayIdx = dayIndex(getTaiwanDate());
+                const fromIdx = mondayIndex(todayIdx) - 7 * (WEEKLY_WEEKS - 1);
+                const from = ymdFromIndex(fromIdx);
+                const to = ymdFromIndex(todayIdx);
+                const res = await fetch(`${SCRIPT_URL}?from=${from}&to=${to}`);
+                const json = await res.json();
+                if (!json.success || !Array.isArray(json.rows)) throw new Error(json.error || '格式錯誤');
+                weeklyData = { rows: json.rows, fromIdx, todayIdx };
+                renderWeeklyReview();
+            } catch (err) {
+                console.error('週回顧載入失敗:', err);
+                card.hidden = true;
+            }
+        }
+
+        function aggregateWeeks(rows, fromIdx) {
+            const weeks = [];
+            for (let w = 0; w < WEEKLY_WEEKS; w++) {
+                const start = fromIdx + w * 7;
+                weeks.push({ start, end: start + 6, scored: [], skipped: 0, avg: {} });
+            }
+            rows.forEach(r => {
+                const idx = dayIndex(r.date);
+                const w = weeks.find(x => idx >= x.start && idx <= x.end);
+                if (!w) return;
+                if (r.跳過 === true) { w.skipped++; return; }
+                if (typeof r.壓力分數 === 'number') w.scored.push(r);
+            });
+            weeks.forEach(w => {
+                WEEKLY_METRICS.forEach(m => {
+                    if (w.scored.length >= WEEKLY_MIN_SCORED) {
+                        const vals = w.scored.map(r => r[m.key]).filter(v => typeof v === 'number');
+                        w.avg[m.key] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                    } else {
+                        w.avg[m.key] = null;
+                    }
+                });
+            });
+            return weeks;
+        }
+
+        function renderWeeklyReview() {
+            if (!weeklyData) return;
+            const card = document.getElementById('weeklyReview');
+            const { rows, fromIdx, todayIdx } = weeklyData;
+            const weeks = aggregateWeeks(rows, fromIdx);
+
+            const weeksWithPoints = weeks.filter(w => w.avg['壓力分數'] !== null).length;
+            if (weeksWithPoints < WEEKLY_MIN_WEEKS) { card.hidden = true; return; }
+
+            // 週標籤與密度點（實心＝有分數的天、空心＝跳過的天；其他日子不畫）
+            document.getElementById('weeklyWeeks').innerHTML = weeks.map(w => {
+                const dots = '<i></i>'.repeat(w.scored.length) + '<i class="hollow"></i>'.repeat(w.skipped);
+                return `<div class="weekly-week">${shortMD(ymdFromIndex(w.start))}<div class="weekly-dots">${dots}</div></div>`;
+            }).join('');
+
+            // 三條 sparkline（先顯示卡片，才量得到寬度）
+            card.hidden = false;
+            const rowsEl = document.getElementById('weeklyRows');
+            rowsEl.innerHTML = WEEKLY_METRICS.map(m => `
+                <div class="weekly-row">
+                    <div class="weekly-label">${m.label}</div>
+                    <svg data-metric="${m.key}" aria-hidden="true"></svg>
+                    <div class="weekly-num" data-metric="${m.key}"></div>
+                </div>`).join('');
+
+            WEEKLY_METRICS.forEach(m => drawSparkline(rowsEl, m.key, weeks));
+            renderEcho(rows, todayIdx);
+        }
+
+        // Y 軸固定 1～10；avg 為 null 的週不畫點、線段中斷
+        function drawSparkline(rowsEl, key, weeks) {
+            const svg = rowsEl.querySelector(`svg[data-metric="${key}"]`);
+            const numEl = rowsEl.querySelector(`.weekly-num[data-metric="${key}"]`);
+            const W = Math.max(svg.getBoundingClientRect().width, 80);
+            const H = 44, PAD = 6;
+            svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            const xAt = i => (i + 0.5) * (W / WEEKLY_WEEKS);
+            const yAt = v => PAD + (H - 2 * PAD) * (1 - (v - 1) / 9);
+
+            let d = '', pen = false, circles = '', last = null;
+            weeks.forEach((w, i) => {
+                const v = w.avg[key];
+                if (v === null) { pen = false; return; }
+                const x = xAt(i).toFixed(1), y = yAt(v).toFixed(1);
+                d += (pen ? ` L ${x} ${y}` : ` M ${x} ${y}`);
+                pen = true;
+                circles += `<circle cx="${x}" cy="${y}" r="3" fill="var(--accent)"/>`;
+                last = v;
+            });
+            svg.innerHTML =
+                `<line x1="0" y1="${yAt(5.5)}" x2="${W}" y2="${yAt(5.5)}" stroke="var(--border)" stroke-width="1"/>` +
+                `<path d="${d.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>` +
+                circles;
+            numEl.textContent = last === null ? '' : last.toFixed(1);
+        }
+
+        // 回聲：7～28 天前一則反思或感恩；以日期為種子，同一天內不換
+        function renderEcho(rows, todayIdx) {
+            const echo = document.getElementById('weeklyEcho');
+            const candidates = [];
+            rows.forEach(r => {
+                const ago = todayIdx - dayIndex(r.date);
+                if (ago < ECHO_MIN_AGO || ago > ECHO_MAX_AGO) return;
+                if (r.反思 && r.反思.trim()) candidates.push({ date: r.date, kind: '反思', text: r.反思.trim() });
+                if (r.輕量感恩 && r.輕量感恩.trim()) candidates.push({ date: r.date, kind: '感恩', text: r.輕量感恩.trim() });
+            });
+            if (!candidates.length) { echo.hidden = true; return; }
+            const pick = candidates[todayIdx % candidates.length];
+            document.getElementById('weeklyEchoMeta').textContent = `${shortMD(pick.date)} · ${pick.kind}`;
+            document.getElementById('weeklyEchoText').textContent = pick.text;
+            echo.hidden = false;
+        }
+
+        let weeklyResizeTimer = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(weeklyResizeTimer);
+            weeklyResizeTimer = setTimeout(renderWeeklyReview, 150);
+        });
 
         function submitForm() {
             if (state.submitting) return;
