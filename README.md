@@ -23,6 +23,10 @@
 - **感恩日誌**：記錄今天值得感謝的事（100 字以內）
 - **反思**：記錄觀察和想法（100 字以內）
 
+### 🔘 跳過標記（F0）
+- 「今天不記分數，只留個記號」：分數三欄留空、活動照填，`跳過` 欄寫入 TRUE
+- 讓「刻意不記」與「忘了記」在資料上分得開；設計判準見 [docs/prd-directions-2026-09.md](docs/prd-directions-2026-09.md)
+
 ### 🎨 設計亮點
 - 深色/淺色雙主題切換
 - 響應式設計，支持手機和桌面
@@ -58,15 +62,16 @@
 2. 創建名為「能量日誌」的工作表
 3. 添加以下欄位名稱（第一列）：
    ```
-   日期 | 壓力分數 | 思路清晰度 | 睡前電量 | 散步 | 冥想 | 重訓 | 跑步 | 輕量感恩 | 反思
+   日期 | 壓力分數 | 思路清晰度 | 睡前電量 | 散步 | 冥想 | 重訓 | 跑步 | 輕量感恩 | 反思 | 跳過
    ```
+   （`跳過` 在 K 欄。若忘了加，後端第一次寫入時會自動補上標題，或在 Apps Script 編輯器執行一次 `setupF0()`）
 4. 記下 Sheet ID（URL 中的那串長 ID）
 
 #### 2. 設置 Google Apps Script
 
 1. 開啟 [Google Apps Script](https://script.google.com)
 2. 新建專案
-3. 將 `energy-journal.gs` 的代碼複製貼上
+3. 將 `backend/energy-journal.gs` 的代碼複製貼上
 4. 修改常數：
    ```javascript
    const SHEET_ID = "你的 Sheet ID";
@@ -122,11 +127,13 @@ git push origin main
 
 ```
 .
-├── index.html              # 主要前端表單（3.5MB）
-├── energy-journal.gs       # Google Apps Script 後端代碼
-├── README.md              # 本檔案
-└── 說明文檔/
-    └── optimization-plan.md # 檔案優化方案
+├── index.html                       # 主要前端表單
+├── backend/
+│   └── energy-journal.gs            # Google Apps Script 後端代碼（部署時複製到 Apps Script 編輯器）
+├── docs/
+│   ├── prd-directions-2026-09.md    # PRD 方向：問題陳述、設計判準、功能候選、階段規劃
+│   └── spec-f0-skip-marker.md       # F0 規格：跳過標記
+└── README.md
 ```
 
 ---

@@ -289,6 +289,35 @@
             cursor: not-allowed;
         }
 
+        /* F0：跳過標記（次要選項，低對比、無強調） */
+        .skip-btn {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-family: 'Noto Sans TC', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        .skip-btn:hover:not(:disabled) {
+            color: var(--text);
+        }
+        .skip-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* F0：該日已留記號，分數區塊淡化，代表目前沒有分數資料 */
+        .card.muted {
+            opacity: 0.45;
+            transition: opacity 0.3s ease;
+        }
+
         .success-modal {
             position: fixed;
             inset: 0;
@@ -362,7 +391,7 @@
         <div class="error" id="errorMsg"></div>
 
         <!-- 心理狀態 -->
-        <div class="card">
+        <div class="card" id="scoreCard">
             <div class="card-title">心理狀態</div>
             
             <div class="slider-group">
@@ -476,13 +505,14 @@
         </div>
 
         <button class="submit-btn" id="submitBtn" onclick="submitForm()">完成今晚的紀錄 ✨</button>
+        <button class="skip-btn" id="skipBtn" onclick="submitSkip()">今天不記分數，只留個記號</button>
     </div>
 
     <div class="success-modal" id="successModal">
         <div class="success-card">
             <div class="success-icon">✓</div>
-            <div class="success-title">今晚完成</div>
-            <div class="success-text">你又好好走過了<br>美好的一天</div>
+            <div class="success-title" id="successTitle">今晚完成</div>
+            <div class="success-text" id="successText">你又好好走過了<br>美好的一天</div>
         </div>
     </div>
 
@@ -501,7 +531,8 @@
             run: false,
             gratitude: '',
             reflection: '',
-            submitting: false
+            submitting: false,
+            skip: false          // F0：該日期目前是否為「跳過」狀態
         };
 
         // 初始化
@@ -532,6 +563,11 @@
                 slider.addEventListener('input', (e) => {
                     state[name] = parseInt(e.target.value);
                     updateSliderDisplay(name);
+                    // F0：使用者開始填分數，離開跳過狀態
+                    if (state.skip) {
+                        state.skip = false;
+                        document.getElementById('scoreCard').classList.remove('muted');
+                    }
                 });
             });
         }
@@ -595,6 +631,11 @@
                     // 有找到今天的記錄，填入表單
                     const data = result.data;
 
+                    // F0：該日為「跳過」，分數為空，不設滑桿，只淡化分數區塊
+                    const isSkip = data.跳過 === true;
+                    state.skip = isSkip;
+                    document.getElementById('scoreCard').classList.toggle('muted', isSkip);
+
                     // 填入滑桿值
                     if (data.壓力分數) {
                         state.pressure = data.壓力分數;
@@ -645,7 +686,7 @@
                         document.getElementById('reflectionCount').textContent = data.反思.length;
                     }
 
-                    loadIndicator.textContent = '✓ 已載入今日記錄';
+                    loadIndicator.textContent = isSkip ? '今天已留記號' : '✓ 已載入今日記錄';
                     loadIndicator.classList.add('done');
                 } else {
                     // 今天還沒有記錄
@@ -670,6 +711,7 @@
             const today = getTaiwanDate();
             const data = {
                 date: today,
+                跳過: false,
                 壓力分數: state.pressure,
                 思路清晰度: state.clarity,
                 睡前電量: state.energy,
@@ -690,19 +732,68 @@
             })
             .then(response => {
                 // no-cors 模式下無法讀取響應，假設成功
-                showSuccess();
+                state.skip = false;
+                document.getElementById('scoreCard').classList.remove('muted');
+                showSuccess('今晚完成', '你又好好走過了<br>美好的一天');
                 state.submitting = false;
                 resetForm();
             })
             .catch(err => {
                 showError('網路錯誤：' + err.message);
                 state.submitting = false;
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';
+                resetForm();
             });
         }
 
-        function showSuccess() {
+        // ===== F0：跳過標記 =====
+        // 分數三欄留空，活動與文字照當下狀態送出，跳過欄寫 TRUE。單擊即送出，不確認。
+        function submitSkip() {
+            if (state.submitting) return;
+            state.submitting = true;
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('skipBtn').disabled = true;
+            document.getElementById('skipBtn').textContent = '正在留記號⋯';
+            document.getElementById('errorMsg').classList.remove('show');
+
+            const today = getTaiwanDate();
+            const data = {
+                date: today,
+                跳過: true,
+                壓力分數: null,
+                思路清晰度: null,
+                睡前電量: null,
+                散步: state.walk,
+                冥想: state.meditate,
+                重訓: state.strength,
+                跑步: state.run,
+                輕量感恩: state.gratitude,
+                反思: state.reflection
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                state.skip = true;
+                document.getElementById('scoreCard').classList.add('muted');
+                document.getElementById('loadIndicator').textContent = '今天已留記號';
+                showSuccess('記號留下了', '今天不記分數<br>也是一種選擇');
+                state.submitting = false;
+                resetForm();
+            })
+            .catch(err => {
+                showError('網路錯誤：' + err.message);
+                state.submitting = false;
+                resetForm();
+            });
+        }
+
+        function showSuccess(title, text) {
+            document.getElementById('successTitle').textContent = title || '今晚完成';
+            document.getElementById('successText').innerHTML = text || '你又好好走過了<br>美好的一天';
             document.getElementById('successModal').classList.add('show');
             setTimeout(() => {
                 document.getElementById('successModal').classList.remove('show');
@@ -718,6 +809,8 @@
         function resetForm() {
             document.getElementById('submitBtn').disabled = false;
             document.getElementById('submitBtn').textContent = '完成今晚的紀錄 ✨';
+            document.getElementById('skipBtn').disabled = false;
+            document.getElementById('skipBtn').textContent = '今天不記分數，只留個記號';
         }
 
         // 頁面加載時初始化
